@@ -46,9 +46,7 @@
         v-model:open="layerControlsOpen"
       >
         <template #default>
-          <comparison-data-controls
-            class="comparison-data-controls"
-          />
+          <!-- Panel intentionally left empty in the simplified ForestGEO viewer -->
         </template>
       </side-placeholder>
 
@@ -101,9 +99,7 @@
         v-model:open="datasetControlsOpen"
       >
         <template #default>
-          <dataset-controls
-           class="dataset-controls"
-          />
+          <!-- Panel intentionally left empty in the simplified ForestGEO viewer -->
         </template>
      </side-placeholder>
     </div>
@@ -111,10 +107,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
+import { computed, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 
-import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
+import { useTempoStore } from "@/stores/app";
 
 const root = useTemplateRef<HTMLDivElement>("root");
 const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");
@@ -148,7 +144,6 @@ watch(showAlert, (newVal) => {
 
 const query = new URLSearchParams(window.location.search);
 debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.toLowerCase() == "true";
-const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
 const HANDLE_SIZE_PX = 4;
@@ -167,7 +162,6 @@ const cssVars = computed(() => {
   };
 });
 
-const localStorageKey = "tempods";
 let animationFrame = 0;
 
 function setBasis(panel: HTMLElement, sizePx: number) {
@@ -178,13 +172,6 @@ function getBasis(panel: HTMLElement): number {
   const basis = parseFloat(getComputedStyle(panel).flexBasis);
   return isNaN(basis) ? 0 : basis;
 }
-
-onBeforeMount(() => {
-  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
-  if (storedState) {
-    updateStoreFromJSON(store, storedState);
-  }
-});
 
 function updateSizes(layersDefault: boolean = false, datasetsDefault: boolean = false) {
   // const rootElement = root.value;
@@ -301,13 +288,6 @@ onMounted(() => {
   window.addEventListener("resize", () => {
     cancelAnimationFrame(animationFrame);
     animationFrame = requestAnimationFrame(() => updateSizes());
-  });
-
-  window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !ignoreCache) {
-      const stringified = serializeTempoStore(store); 
-      window.localStorage.setItem(localStorageKey, stringified);
-    }
   });
 
   updateSizes(true, true);

@@ -7,7 +7,16 @@ const path = require("path");
 
 module.exports = defineConfig({
   publicPath: "./",
-  
+
+  // The app was brutally stripped down to the ForestGEO (SCBI) viewer. A number
+  // of old TEMPO source files are intentionally left on disk but are no longer
+  // imported. fork-ts-checker type-checks the *whole* project (tsconfig include),
+  // so those dead files would fail the build. Disable it and rely on Babel
+  // transpile-only for the files that are actually bundled.
+  chainWebpack: (config) => {
+    config.plugins.delete("fork-ts-checker");
+  },
+
   configureWebpack: {
     plugins: [
       new VuetifyPlugin(),

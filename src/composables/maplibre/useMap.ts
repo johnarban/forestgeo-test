@@ -105,25 +105,22 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
     map.moveLayer('stamen-toner-labels');
   }
   
+  // NB: addCoastlines/addStates/addRoads/addLabels are intentionally left
+  // defined but unused for the ForestGEO viewer -- the terrain basemap is the
+  // only background we want. They're kept around so they can be re-enabled.
+  void addCoastlines;
+  void addStates;
+  void addRoads;
+  void addLabels;
+
   function setupMap() {
     if (map.value === null) return;
-    
+
     // Need to use weird type assertion to avoid
     // Type instantiation is excessively deep and possibly infinite.ts(2589)
     // See discussion here https://github.com/mapbox/mapbox-gl-js/issues/13203#issuecomment-2634013147
     const libreMap = map.value;
-    
 
-    // libreMap.setProjection({
-    //   type: 'globe' // This activates the 3D globe view
-    // });
-
-    addCoastlines(libreMap);
-    addStates(libreMap);
-    addRoads(libreMap);
-    addLabels(libreMap);
-    
-    
     if (onReady !== undefined) {
       onReady(libreMap);
     }
@@ -161,12 +158,31 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
   function createMap(): Ref<M.Map> {
     const _map = new M.Map({
       container: id,
-      // style: 'https://tiles.openfreemap.org/styles/liberty', // style URL
-      style: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
+      // Terrain raster basemap (Stamen Terrain via Stadia Maps -- keyless on localhost)
+      style: {
+        version: 8,
+        sources: {
+          'terrain-raster': {
+            type: 'raster',
+            tiles: [`https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}${retinaParam}.png`],
+            tileSize: 256,
+            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://stamen.com/">Stamen Design</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          },
+        },
+        layers: [
+          {
+            id: 'terrain-raster',
+            type: 'raster',
+            source: 'terrain-raster',
+            minzoom: 0,
+            maxzoom: 20,
+          },
+        ],
+      },
       center: options.loc ? [options.loc[1], options.loc[0]] : [0, 0], // starting position [lng, lat]
       zoom: options.zoom ?? 1, // starting zoom,
       attributionControl: false,
-      
+
     }).addControl(new AttributionControl({
       compact: true,
     }));
