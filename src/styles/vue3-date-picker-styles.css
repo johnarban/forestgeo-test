@@ -1,0 +1,49 @@
+.dont-use-this-one.dp__theme_dark {
+  --dp-primary-text-color: #fff !important; /* selected date text */
+  --dp-primary-color: var(--accent-color) !important; /* selected date background */
+}
+
+.dp__month_year_select,
+.dp__calendar_item {
+  color: #97c8f1 !important; /* selectable date text & Month/Year */
+  font-weight: 800 !important;
+}
+
+
+
+.dp__cell_disabled {
+  color: #888 !important;
+  font-weight: 400;
+}
+.dp__cell_offset {
+    color: #555 !important;
+  font-weight: 400;
+}
+
+
+button.dp__action-latest {
+  color: white;
+  background: var(--dp-primary-color);
+}
+
+button.dp__action-latest[disabled] {
+  background: var(--dp-disabled-color);
+  color: #ccc;
+  
+}
+
+.dp__menu {
+    /* the main div containing the calendar with the border radius */
+}
+
+.cds__date-picker {
+  --dp-border-color: rgba(255, 255,255, 0.7);
+  --dp-border-color-hover: white;
+ --dp-border-color-focus: white;
+}
+
+
+.dp__menu {
+  border: 1px solid rgb(var(--v-theme-surface-variant), 0.9);
+}
+
