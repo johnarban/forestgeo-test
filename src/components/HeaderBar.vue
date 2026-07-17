@@ -1,17 +1,16 @@
 <template>
   <div class="header">
-    <!-- tempo logo -->
+    <!-- ForestGEO / Smithsonian logo -->
     <div id="logo-title">
-    <a href="https://tempo.si.edu" target="_blank" rel="noopener noreferrer" >
-      <img 
-        src="@/assets/TEMPO-Logo-Small.png"
-        alt="TEMPO Logo"
-        style="width: 100px; height: 100px;"
+    <a href="https://forestgeo.si.edu" target="_blank" rel="noopener noreferrer" >
+      <img
+        src="forestgeo.svg"
+        alt="Smithsonian ForestGEO Logo"
       >
     </a>
     </div>
 
-    <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
+    <h1 id="title">ForestGEO: Explore Tree Growth at SCBI</h1>
     <!-- <cds-dialog
       title="Time Series"
       v-model="samplesGraph"
@@ -231,10 +230,18 @@ function reportError(_error: string, message: string) {
   flex-grow: 1;
 }
 
-a[href="https://tempo.si.edu"]>img {
-  // display: inline;
-  height: 70px !important;
-  width: auto !important;
+// The ForestGEO mark is white + yellow, so it needs a dark backdrop to read.
+a[href="https://forestgeo.si.edu"] {
+  display: inline-block;
+  background-color: var(--forestgeo-green);
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 0;
+
+  >img {
+    height: 70px !important;
+    width: auto !important;
+  }
 }
 
 .header {

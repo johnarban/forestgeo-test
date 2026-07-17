@@ -387,6 +387,7 @@ body {
   --default-line-height: clamp(1rem, min(2.2vh, 2.2vw), 1.6rem); // we don't use this
   --smithsonian-blue: #009ade;
   --smithsonian-yellow: #ffcc33;
+  --forestgeo-green: #1b5e20;
   --info-background: #092088;
   --map-height: 500px;
 }
