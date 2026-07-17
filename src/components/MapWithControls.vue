@@ -42,12 +42,12 @@
         </template>
 
         <template v-else>
-          <div class="legend-title">Growth rate (mm/day)</div>
+          <div class="legend-title">Growth rate (µm/day)</div>
           <div class="colorbar" :style="{ background: growthGradient }"></div>
           <div class="colorbar-ticks">
-            <span>&minus;0.2</span>
+            <span>&minus;100</span>
             <span>0</span>
-            <span>+0.2</span>
+            <span>+100</span>
           </div>
           <div class="legend-item mt-1">
             <span class="legend-swatch" :style="{ backgroundColor: GENUS_FALLBACK }"></span>
@@ -140,44 +140,58 @@ const map = shallowRef<Map | null>(null);
 const store = useTempoStore();
 const { selectedYear, colorMode, availableYears, availableSpecies, selectedSpecies } = storeToRefs(store);
 
-// Common names per USDA PLANTS database (plants.usda.gov), keyed by Latin name.
-const COMMON_NAMES: Record<string, string> = {
-  "Acer rubrum": "Red maple",
-  "Carpinus caroliniana": "American hornbeam",
-  "Carya cordiformis": "Bitternut hickory",
-  "Carya glabra": "Pignut hickory",
-  "Carya ovalis": "Red hickory",
-  "Carya tomentosa": "Mockernut hickory",
-  "Cercis canadensis": "Eastern redbud",
-  "Cornus florida": "Flowering dogwood",
-  "Fagus grandifolia": "American beech",
-  "Fraxinus americana": "White ash",
-  "Fraxinus nigra": "Black ash",
-  "Juglans nigra": "Black walnut",
-  "Liriodendron tulipifera": "Tuliptree",
-  "Nyssa sylvatica": "Blackgum",
-  "Pinus strobus": "Eastern white pine",
-  "Platanus occidentalis": "American sycamore",
-  "Prunus serotina": "Black cherry",
-  "Quercus alba": "White oak",
-  "Quercus prinus": "Chestnut oak",
-  "Quercus rubra": "Northern red oak",
-  "Quercus velutina": "Black oak",
-  "Robinia pseudoacacia": "Black locust",
-  "Sassafras albidum": "Sassafras",
-  "Tilia americana": "American basswood",
-  "Ulmus rubra": "Slippery elm",
-};
-
-function commonName(latin: string): string {
-  return COMMON_NAMES[latin] ?? latin;
+// The dendroband_growth dataset identifies species only by a 4-letter `sp` code,
+// so everything else (Latin/genus/family) is looked up here. The code -> Latin
+// mapping comes from the SCBI measurements dataset, which carries both columns;
+// common names are the USDA PLANTS database (plants.usda.gov) accepted names.
+interface SpeciesInfo {
+  latin: string;
+  genus: string;
+  family: string;
+  common: string;
 }
 
-// v-select items: display the common name, keep the Latin name as the value
+const SP_INFO: Record<string, SpeciesInfo> = {
+  acru: { latin: "Acer rubrum", genus: "Acer", family: "Sapindaceae", common: "Red maple" },
+  caca: { latin: "Carpinus caroliniana", genus: "Carpinus", family: "Betulaceae", common: "American hornbeam" },
+  caco: { latin: "Carya cordiformis", genus: "Carya", family: "Juglandaceae", common: "Bitternut hickory" },
+  cagl: { latin: "Carya glabra", genus: "Carya", family: "Juglandaceae", common: "Pignut hickory" },
+  caovl: { latin: "Carya ovalis", genus: "Carya", family: "Juglandaceae", common: "Red hickory" },
+  cato: { latin: "Carya tomentosa", genus: "Carya", family: "Juglandaceae", common: "Mockernut hickory" },
+  ceca: { latin: "Cercis canadensis", genus: "Cercis", family: "Fabaceae", common: "Eastern redbud" },
+  cofl: { latin: "Cornus florida", genus: "Cornus", family: "Cornaceae", common: "Flowering dogwood" },
+  fagr: { latin: "Fagus grandifolia", genus: "Fagus", family: "Fagaceae", common: "American beech" },
+  fram: { latin: "Fraxinus americana", genus: "Fraxinus", family: "Oleaceae", common: "White ash" },
+  frni: { latin: "Fraxinus nigra", genus: "Fraxinus", family: "Oleaceae", common: "Black ash" },
+  juni: { latin: "Juglans nigra", genus: "Juglans", family: "Juglandaceae", common: "Black walnut" },
+  litu: { latin: "Liriodendron tulipifera", genus: "Liriodendron", family: "Magnoliaceae", common: "Tuliptree" },
+  nysy: { latin: "Nyssa sylvatica", genus: "Nyssa", family: "Nyssaceae", common: "Blackgum" },
+  pist: { latin: "Pinus strobus", genus: "Pinus", family: "Pinaceae", common: "Eastern white pine" },
+  ploc: { latin: "Platanus occidentalis", genus: "Platanus", family: "Platanaceae", common: "American sycamore" },
+  prse: { latin: "Prunus serotina", genus: "Prunus", family: "Rosaceae", common: "Black cherry" },
+  qual: { latin: "Quercus alba", genus: "Quercus", family: "Fagaceae", common: "White oak" },
+  qupr: { latin: "Quercus prinus", genus: "Quercus", family: "Fagaceae", common: "Chestnut oak" },
+  quru: { latin: "Quercus rubra", genus: "Quercus", family: "Fagaceae", common: "Northern red oak" },
+  quve: { latin: "Quercus velutina", genus: "Quercus", family: "Fagaceae", common: "Black oak" },
+  rops: { latin: "Robinia pseudoacacia", genus: "Robinia", family: "Fabaceae", common: "Black locust" },
+  saal: { latin: "Sassafras albidum", genus: "Sassafras", family: "Lauraceae", common: "Sassafras" },
+  tiam: { latin: "Tilia americana", genus: "Tilia", family: "Malvaceae", common: "American basswood" },
+  ulru: { latin: "Ulmus rubra", genus: "Ulmus", family: "Ulmaceae", common: "Slippery elm" },
+};
+
+function spInfo(sp: unknown): SpeciesInfo | null {
+  return (typeof sp === "string" ? SP_INFO[sp.trim()] : null) ?? null;
+}
+
+// v-select items: display the common name, keep the `sp` code as the value
 // (the value the map filter matches on). Sorted by common name.
 const speciesItems = computed(() =>
   availableSpecies.value
-    .map((latin) => ({ title: commonName(latin), subtitle: latin, value: latin }))
+    .map((sp) => ({
+      title: SP_INFO[sp]?.common ?? sp,
+      subtitle: SP_INFO[sp]?.latin ?? "",
+      value: sp,
+    }))
     .sort((a, b) => a.title.localeCompare(b.title))
 );
 
@@ -220,7 +234,7 @@ const tickLabels = computed<Record<number, string>>(() => {
 // --- Color modes ---------------------------------------------------------
 const colorModeItems = [
   { title: "Genus", value: "genus" },
-  { title: "Growth rate (mm/day)", value: "growth" },
+  { title: "Growth rate (µm/day)", value: "growth" },
 ];
 
 // Distinct color per genus. Fallback (unknown/null) is gray.
@@ -251,41 +265,46 @@ const GENUS_FALLBACK = "#9e9e9e";
 // Template-facing legend data
 const genusEntries = Object.entries(GENUS_COLORS);
 
-// Diverging growth-rate color stops (value -> color), shared by the map layer
-// paint expression and the colorbar legend.
+// Diverging growth-rate color stops (µm/day -> color), shared by the map layer
+// paint expression and the colorbar legend. Domain covers roughly the 5th-95th
+// percentile of `rate` in the data.
 const GROWTH_STOPS: [number, string][] = [
-  [-0.2, "#5e3c99"],
-  [-0.05, "#b2abd2"],
+  [-100, "#5e3c99"],
+  [-25, "#b2abd2"],
   [0, "#f7f7f7"],
-  [0.05, "#a6dba0"],
-  [0.2, "#008837"],
+  [50, "#a6dba0"],
+  [100, "#008837"],
 ];
+const GROWTH_MIN = GROWTH_STOPS[0][0];
+const GROWTH_MAX = GROWTH_STOPS[GROWTH_STOPS.length - 1][0];
 const growthGradient = `linear-gradient(to right, ${GROWTH_STOPS
-  .map(([v, c]) => `${c} ${((v + 0.2) / 0.4) * 100}%`)
+  .map(([v, c]) => `${c} ${((v - GROWTH_MIN) / (GROWTH_MAX - GROWTH_MIN)) * 100}%`)
   .join(", ")})`;
 
+// The data identifies species only by `sp`, so the per-genus colors are resolved
+// through SP_INFO into a match over the species code.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function genusColorExpression(): any {
-  const match: (string | string[])[] = ["match", ["get", "Genus"]];
-  Object.entries(GENUS_COLORS).forEach(([genus, color]) => {
-    match.push(genus, color);
+  const match: (string | string[])[] = ["match", ["get", "sp"]];
+  Object.entries(SP_INFO).forEach(([sp, info]) => {
+    match.push(sp, GENUS_COLORS[info.genus] ?? GENUS_FALLBACK);
   });
   match.push(GENUS_FALLBACK); // default
   return match;
 }
 
-// Diverging color scale for measure_change_per_day (growth rate).
+// Diverging color scale for `rate` (growth rate, µm/day).
 // Shrinking (negative) -> purple/blue, ~0 -> light, growing (positive) -> green.
-// Domain clamped to roughly the 5th-95th percentile of the data.
+// `rate` is null where days == 0, which paints gray.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function growthColorExpression(): any {
   return [
     "case",
-    ["==", ["get", "measure_change_per_day"], null], GENUS_FALLBACK,
+    ["==", ["get", "rate"], null], GENUS_FALLBACK,
     [
       "interpolate",
       ["linear"],
-      ["get", "measure_change_per_day"],
+      ["get", "rate"],
       ...GROWTH_STOPS.flat(),
     ],
   ];
@@ -324,7 +343,7 @@ function speciesClause(): any {
   // All selected -> no species restriction. None selected -> show nothing.
   if (allSpeciesSelected.value || availableSpecies.value.length === 0) { return true; }
   if (selectedSpecies.value.length === 0) { return false; }
-  return ["in", ["get", "Latin"], ["literal", selectedSpecies.value]];
+  return ["in", ["get", "sp"], ["literal", selectedSpecies.value]];
 }
 
 function applyFilter() {
@@ -364,22 +383,26 @@ function setupInteractions(m: Map) {
         ? ""
         : `<tr><td class="k">${label}</td><td class="v">${value}</td></tr>`;
 
-    const latin = typeof p.Latin === "string" ? p.Latin : "";
-    const title = latin ? commonName(latin) : "Unknown species";
+    const info = spInfo(p.sp);
+    const title = info?.common ?? "Unknown species";
+    const measured = (p.date_start && p.date_end) ? `${p.date_start} &rarr; ${p.date_end}` : null;
     const html = `
       <div class="tree-popup-body">
         <div class="tree-popup-title">${title}</div>
-        ${latin ? `<div class="tree-popup-latin">${latin}</div>` : ""}
+        ${info ? `<div class="tree-popup-latin">${info.latin}</div>` : ""}
         <table>
           ${row("Tag", p.tag)}
-          ${row("Genus", p.Genus)}
-          ${row("Species", p.Species)}
-          ${row("Family", p.Family)}
+          ${row("Stem ID", p.stemID)}
+          ${row("Genus", info?.genus)}
+          ${row("Family", info?.family)}
           ${row("Year", p.year)}
-          ${row("Status", p.status)}
-          ${row("DBH (mm)", p.dbh)}
           ${row("Quadrat", p.quadrat)}
-          ${row("Growth (mm/day)", p.measure_change_per_day != null ? Number(p.measure_change_per_day).toFixed(3) : null)}
+          ${row("Measured", measured)}
+          ${row("Start (mm)", p.measure_start)}
+          ${row("End (mm)", p.measure_end)}
+          ${row("Growth (mm)", p.growth != null ? Number(p.growth).toFixed(2) : null)}
+          ${row("Days", p.days)}
+          ${row("Rate (µm/day)", p.rate != null ? Number(p.rate).toFixed(1) : null)}
         </table>
       </div>`;
 
@@ -400,15 +423,21 @@ async function loadData() {
   loading.value = true;
   let data: GeoJSON.FeatureCollection;
   try {
-    const resp = await fetch("scbi_dendrobands_measurements.geojson");
+    const resp = await fetch("dendroband_growth.geojson");
     if (!resp.ok) {
       throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
     }
     data = (await resp.json()) as GeoJSON.FeatureCollection;
+    // A couple of `sp` values carry trailing whitespace; trim so they don't read
+    // as extra species in the filter or miss the color match.
+    data.features.forEach((f) => {
+      const sp = f.properties?.sp;
+      if (typeof sp === "string" && f.properties) { f.properties.sp = sp.trim(); }
+    });
     treesLayer.setData(data);
   } catch (error) {
-    console.error("Failed to load SCBI dendroband data:", error);
-    store.globalWarning = "Failed to load the SCBI dendroband data.";
+    console.error("Failed to load dendroband growth data:", error);
+    store.globalWarning = "Failed to load the dendroband growth data.";
     loading.value = false;
     return;
   }
@@ -422,8 +451,8 @@ async function loadData() {
     data.features.forEach((f) => {
       const y = f.properties?.year;
       if (typeof y === "number") { years.add(y); }
-      const latin = f.properties?.Latin;
-      if (typeof latin === "string" && latin) { species.add(latin); }
+      const sp = f.properties?.sp;
+      if (typeof sp === "string" && sp) { species.add(sp); }
     });
     availableYears.value = Array.from(years).sort((a, b) => a - b);
     if (availableYears.value.length && !availableYears.value.includes(selectedYear.value)) {
@@ -434,7 +463,7 @@ async function loadData() {
     selectedSpecies.value = [...availableSpecies.value];
     applyFilter();
   } catch (error) {
-    console.error("Error post-processing SCBI data (points still shown):", error);
+    console.error("Error post-processing dendroband data (points still shown):", error);
   }
 }
 
