@@ -10,12 +10,11 @@ jobs:
   build:
     if: ${{ github.repository_owner == 'johnarban' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -57,5 +56,5 @@ jobs:
         if: ${{ steps.draft.outputs.value == 'false' }}
         with:
           branch: gh-pages
-          folder: deployment 
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          folder: deployment
+          token: ${{ secrets.GITHUB_TOKEN }}
