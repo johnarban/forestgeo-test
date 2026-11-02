@@ -7,6 +7,7 @@ import { ref } from "vue";
 // the state that drives the SCBI map: the selected year and how to color points.
 
 export type ColorMode = "genus" | "growth";
+export type Basemap = "terrain" | "plain";
 
 const createTempoStore = () => defineStore("tempods", () => {
   const debugMode = ref(false);
@@ -26,10 +27,20 @@ const createTempoStore = () => defineStore("tempods", () => {
   const selectedYear = ref<number>(2010);
   const colorMode = ref<ColorMode>("genus");
 
-  // Species filter (uses the full Latin name). `selectedSpecies` is the set of
-  // species currently shown; it is initialized to all species once data loads.
+  // Basemap: terrain (default) or a plainer light basemap that makes the
+  // species-range overlays easier to see.
+  const basemap = ref<Basemap>("terrain");
+
+  // Species filter (uses the `sp` code). `selectedSpecies` is the set of species
+  // currently shown; it is initialized to all species once data loads.
   const availableSpecies = ref<string[]>([]);
   const selectedSpecies = ref<string[]>([]);
+
+  // Native species-range overlays (USTreeAtlas). `rangeSpecies` is the set of
+  // `sp` codes whose range polygon is currently shown; `rangeLoading` tracks
+  // which are still fetching (range files are large).
+  const rangeSpecies = ref<string[]>([]);
+  const rangeLoading = ref<string[]>([]);
 
   return {
     debugMode,
@@ -45,9 +56,13 @@ const createTempoStore = () => defineStore("tempods", () => {
     availableYears,
     selectedYear,
     colorMode,
+    basemap,
 
     availableSpecies,
     selectedSpecies,
+
+    rangeSpecies,
+    rangeLoading,
   };
 });
 

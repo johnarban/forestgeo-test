@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 10
   cacheKey: 10
 
 "@achrinza/node-ipc@npm:^9.2.5":
@@ -250,6 +250,7 @@ __metadata:
     less: "npm:^4.2.0"
     less-loader: "npm:^12.0.0"
     maplibre-gl: "npm:^5.5.0"
+    maplibre-gl-vector: "npm:^0.11.1"
     pinia: "npm:^3.0.3"
     plotly.js-dist-min: "npm:^3.0.3"
     stream: "npm:^0.0.3"
@@ -4239,6 +4240,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fflate@npm:^0.8.2":
+  version: 0.8.3
+  resolution: "fflate@npm:0.8.3"
+  checksum: 10/6ebf528dc9c56e78e715eac615b009b25dc33e15c1920b11ebba44e6d76181c647756a81a23e19247907496b93aa99928514c53090579a65109e026ac2824aa7
+  languageName: node
+  linkType: hard
+
 "figures@npm:^2.0.0":
   version: 2.0.0
   resolution: "figures@npm:2.0.0"
@@ -5808,6 +5816,24 @@ __metadata:
     promise-retry: "npm:^2.0.1"
     ssri: "npm:^13.0.0"
   checksum: 10/78da4fc1df83cb596e2bae25aa0653b8a9c6cbdd6674a104894e03be3acfcd08c70b78f06ef6407fbd6b173f6a60672480d78641e693d05eb71c09c13ee35278
+  languageName: node
+  linkType: hard
+
+"maplibre-gl-vector@npm:^0.11.1":
+  version: 0.11.1
+  resolution: "maplibre-gl-vector@npm:0.11.1"
+  dependencies:
+    fflate: "npm:^0.8.2"
+  peerDependencies:
+    maplibre-gl: ">=3.0.0"
+    react: ">=18.0.0"
+    react-dom: ">=18.0.0"
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 10/47e416840bea5a3ec64acd8688d2041814451e2ee5e31e96dcb013a221b13b5943cf736b3a83c5c1a76ed5a036b8d1988562b0a39a2b9ef2c1309f04b1d0f538
   languageName: node
   linkType: hard
 

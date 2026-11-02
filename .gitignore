@@ -24,3 +24,8 @@ tsconfig.tsbuildinfo
 **/tests_output/**
 
 *.env
+
+# Local symlink to the USTreeAtlas species-range GeoJSON (machine-specific
+# absolute path). See src/datasets/addTreeRanges.ts. For production, point
+# RANGE_BASE_URL at the raw GitHub URLs or copy the files into the repo.
+/public/tree_ranges

@@ -46,7 +46,7 @@
         v-model:open="layerControlsOpen"
       >
         <template #default>
-          <!-- Panel intentionally left empty in the simplified ForestGEO viewer -->
+          <species-range-controls />
         </template>
       </side-placeholder>
 
