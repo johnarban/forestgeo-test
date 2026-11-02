@@ -5,7 +5,25 @@
         density="compact"
         color="var(--info-background)"
       >
-        <v-toolbar-title text="SCBI Dendroband Viewer"></v-toolbar-title>
+        <v-toolbar-title :text="`${SITES[site].name} Dendroband Viewer`"></v-toolbar-title>
+        <!-- clicking a site (even the current one) recenters the map on that plot -->
+        <v-btn-toggle
+          v-model="site"
+          mandatory
+          density="compact"
+          variant="outlined"
+          divided
+          :color="accentColor2"
+          class="site-toggle mr-3"
+        >
+          <v-btn
+            v-for="s in siteKeys"
+            :key="s"
+            :value="s"
+            size="small"
+            @click="goToSite(s)"
+          >{{ s }}</v-btn>
+        </v-btn-toggle>
       </v-toolbar>
 
       <MaplibreMap
@@ -144,19 +162,21 @@ import { Map } from "maplibre-gl";
 import { v4 } from "uuid";
 
 import type { InitMapOptions, LatLngPair } from "@/types";
-import { useTempoStore } from "@/stores/app";
+import { useTempoStore, type Site } from "@/stores/app";
 import {
   addDendrobands,
   SP_INFO,
   GENUS_FALLBACK,
   genusEntries,
   growthGradient,
+  SITES,
 } from "@/datasets/addDendrobands";
 import { addTreeRanges } from "@/datasets/addTreeRanges";
 import { addWater } from "@/datasets/addWater";
 import { addSercElevation } from "@/datasets/addSercElevation";
 import { addSercSoil } from "@/datasets/addSercSoil";
 import { addTreeDensity } from "@/datasets/addTreeDensity";
+import { addSercTrees } from "@/datasets/addSercTrees";
 import MaplibreMap from "@/components/MaplibreMap.vue";
 
 const mapID = `map-${v4().replace("-", "")}`;
@@ -166,7 +186,7 @@ const map = shallowRef<Map | null>(null);
 const store = useTempoStore();
 const {
   selectedYear, colorMode, availableYears, availableSpecies, selectedSpecies,
-  rangeSpecies, rangeLoading, basemap,
+  rangeSpecies, rangeLoading, basemap, site, accentColor2,
 } = storeToRefs(store);
 
 // Optional plainer basemap (Stamen Toner Lite via Stadia -- keyless on
@@ -206,10 +226,11 @@ function applyBasemap() {
   }
 }
 
-// The dataset layer (creation, loading, filtering, coloring, popups) lives in
-// the datasets folder alongside the other map layers.
-const dendrobands = addDendrobands(map);
-const loading = dendrobands.loading;
+// One dendroband layer per site (creation, loading, filtering, coloring,
+// popups live in the datasets folder alongside the other map layers).
+const siteKeys = Object.keys(SITES) as Site[];
+const dendrobands = siteKeys.map((s) => addDendrobands(map, s));
+const loading = computed(() => dendrobands.some((d) => d.loading.value));
 
 // Native species-range overlays (USTreeAtlas). Toggled from the left panel via
 // `rangeSpecies` in the store; bridge its loading state back to the store.
@@ -223,8 +244,11 @@ const water = addWater(map);
 const sercElevation = addSercElevation(map);
 const sercSoil = addSercSoil(map);
 
-// Tree-count heatmap on the dendroband source; shares the points' filter.
-const treeDensity = addTreeDensity(map);
+// Tree-count heatmap per site on its dendroband source; shares the points' filter.
+const treeDensity = siteKeys.map((s) => addTreeDensity(map, s));
+
+// SERC census tree list: density heatmap (on) and points (off).
+const sercTrees = addSercTrees(map);
 
 // v-select items: display the common name, keep the `sp` code as the value
 // (the value the map filter matches on). Sorted by common name.
@@ -253,9 +277,9 @@ function toggleSelectAllSpecies() {
   selectedSpecies.value = allSpeciesSelected.value ? [] : [...availableSpecies.value];
 }
 
-// SCBI plot (Smithsonian Conservation Biology Institute, Front Royal, VA)
+// Start on the SCBI plot (Smithsonian Conservation Biology Institute, Front Royal, VA)
 const homeState = ref<InitMapOptions>({
-  loc: [38.8925, -78.1465] as LatLngPair,
+  loc: [SITES.SCBI.center[1], SITES.SCBI.center[0]] as LatLngPair,
   zoom: 16,
   t: null,
 });
@@ -280,34 +304,47 @@ const colorModeItems = [
 
 // --- Map wiring: delegate data/layer/style to the dataset composable -----
 function applyFilter() {
-  const filter = dendrobands.applyFilter(selectedYear.value, selectedSpecies.value, availableSpecies.value);
-  treeDensity.setFilter(filter);
+  dendrobands.forEach((d, i) => {
+    const filter = d.applyFilter(selectedYear.value, selectedSpecies.value, availableSpecies.value);
+    treeDensity[i].setFilter(filter);
+  });
 }
 
 async function onMapReady(m: Map) {
   map.value = m;
   store.map = m; // for the layer order panel
+  // The panels finish laying out after the map is created, and MapLibre skips
+  // the first size change its ResizeObserver reports, so size the canvas now.
+  m.resize();
   addPlainBasemap(m); // beneath the data layers added below
-  dendrobands.init();
-  treeDensity.init(); // needs the dendroband source from init() above
+  dendrobands.forEach((d) => d.init());
+  treeDensity.forEach((t) => t.init()); // needs the dendroband sources from init() above
   sercElevation.init();
   sercSoil.init();
   water.init(); // async; inserts beneath the points via beforeId
-  dendrobands.setColorMode(colorMode.value);
+  sercTrees.init(); // async, same
+  dendrobands.forEach((d) => d.setColorMode(colorMode.value));
   applyFilter();
 
-  const result = await dendrobands.loadData();
-  if (!result) {
-    store.globalWarning = "Failed to load the dendroband growth data.";
-    return;
+  const results = await Promise.all(dendrobands.map((d) => d.loadData()));
+  const failed = siteKeys.filter((_, i) => !results[i]);
+  if (failed.length) {
+    store.globalWarning = `Failed to load the ${failed.join(" and ")} dendroband growth data.`;
   }
+  const loaded = results.filter((r) => r !== null);
+  if (!loaded.length) { return; }
 
-  availableYears.value = result.years;
-  if (result.years.length && !result.years.includes(selectedYear.value)) {
-    selectedYear.value = result.years[0];
+  // the controls cover every site's years and species
+  const years = [...new Set(loaded.flatMap((r) => r.years))].sort((a, b) => a - b);
+  const species = [...new Set(loaded.flatMap((r) => r.species))].sort();
+  availableYears.value = years;
+  // start on a year every site has data for (SERC starts in 2010, SCBI in 2011)
+  const shared = years.filter((y) => loaded.every((r) => r.years.includes(y)));
+  if (years.length && !shared.includes(selectedYear.value)) {
+    selectedYear.value = shared[0] ?? years[0];
   }
-  availableSpecies.value = result.species;
-  selectedSpecies.value = [...result.species]; // start with everything shown
+  availableSpecies.value = species;
+  selectedSpecies.value = [...species]; // start with everything shown
   applyFilter();
 }
 
@@ -322,13 +359,19 @@ watch(selectedSpecies, (species) => {
     rangeSpecies.value = stillShown;
   }
 }, { deep: true });
-watch(colorMode, (mode) => dendrobands.setColorMode(mode));
+watch(colorMode, (mode) => dendrobands.forEach((d) => d.setColorMode(mode)));
 
 // Show/hide native range overlays as the left-panel checkboxes change.
 watch(rangeSpecies, (species) => treeRanges.setVisibleRanges(species), { deep: true });
 
 // Switch the background between terrain and the plainer basemap.
 watch(basemap, applyBasemap);
+
+// Every site's trees are loaded; picking a site just moves the map there at
+// the startup zoom.
+function goToSite(s: Site) {
+  map.value?.flyTo({ center: SITES[s].center, zoom: homeState.value.zoom });
+}
 
 void maplibreMap; // exposed ref kept for potential future use
 </script>

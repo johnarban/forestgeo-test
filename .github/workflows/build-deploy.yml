@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - main
+      - forestgeo-map-layers
       # - dev
+
+concurrency:
+  group: build-and-deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -58,3 +63,8 @@ jobs:
           branch: gh-pages
           folder: deployment
           token: ${{ secrets.GITHUB_TOKEN }}
+          clean: true
+          # Branch builds go to a subfolder; main deploys to root without wiping them
+          target-folder: ${{ github.ref_name == 'main' && '.' || 'test' }}
+          clean-exclude: |
+            test

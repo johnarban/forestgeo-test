@@ -9,6 +9,7 @@ import type { Map } from "maplibre-gl";
 
 export type ColorMode = "genus" | "growth";
 export type Basemap = "terrain" | "plain";
+export type Site = "SCBI" | "SERC";
 
 const createTempoStore = () => defineStore("tempods", () => {
   const debugMode = ref(false);
@@ -31,6 +32,9 @@ const createTempoStore = () => defineStore("tempods", () => {
   // Basemap: terrain (default) or a plainer light basemap that makes the
   // species-range overlays easier to see.
   const basemap = ref<Basemap>("terrain");
+
+  // Which ForestGEO plot the map is showing (both are loaded).
+  const site = ref<Site>("SCBI");
 
   // Species filter (uses the `sp` code). `selectedSpecies` is the set of species
   // currently shown; it is initialized to all species once data loads.
@@ -63,6 +67,7 @@ const createTempoStore = () => defineStore("tempods", () => {
     selectedYear,
     colorMode,
     basemap,
+    site,
 
     availableSpecies,
     selectedSpecies,

@@ -1,20 +1,22 @@
 import type { Ref } from "vue";
 import type M from "maplibre-gl";
+import type { Site } from "@/stores/app";
 import { addHeatmap } from "./addHeatmap";
-import { DENDROBAND_LAYER_ID, DENDROBAND_SOURCE_ID } from "./addDendrobands";
+import { dendrobandLayerId, dendrobandSourceId } from "./addDendrobands";
 
-// Density of dendroband trees, one count per stem. It reads the dendroband
-// source, which has one point per stem per year, so give it the same filter as
-// the points (setFilter) or every stem is counted once per year.
-export const TREE_DENSITY_ID = "scbi-trees-density";
+// Density of one site's dendroband trees, one count per stem. It reads that
+// site's dendroband source, which has one point per stem per year, so give it the
+// same filter as the points (setFilter) or every stem is counted once per year.
+export const treeDensityId = (site: Site) => `${site.toLowerCase()}-trees-density`;
 
-export function addTreeDensity(map: Ref<M.Map | null>) {
-  return addHeatmap(map, TREE_DENSITY_ID, DENDROBAND_SOURCE_ID, {
-    beforeId: DENDROBAND_LAYER_ID,
+// Heatmap radius (px) tuned for plot-scale zooms (~14-18).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const PLOT_HEATMAP_RADIUS: any = ["interpolate", ["exponential", 2], ["zoom"], 14, 6, 18, 60];
+
+export function addTreeDensity(map: Ref<M.Map | null>, site: Site) {
+  return addHeatmap(map, treeDensityId(site), dendrobandSourceId(site), {
+    beforeId: dendrobandLayerId(site),
     visible: false, // turned on from the layer panel
-    paint: {
-      // tuned for plot-scale zooms (~14-18)
-      "heatmap-radius": ["interpolate", ["exponential", 2], ["zoom"], 14, 6, 18, 60],
-    },
+    paint: { "heatmap-radius": PLOT_HEATMAP_RADIUS },
   });
 }
