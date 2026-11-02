@@ -46,6 +46,16 @@
         v-model:open="layerControlsOpen"
       >
         <template #default>
+          <div class="layer-order-panel">
+            <div class="panel-title">Map layers</div>
+            <div class="panel-subtitle">Drag to reorder. Use the slider to adjust opacity.</div>
+            <layer-order-control
+              :map-ref="map"
+              :order="LAYER_ORDER"
+              :layer-names="LAYER_NAMES"
+              :connections="LAYER_CONNECTIONS"
+            />
+          </div>
           <species-range-controls />
         </template>
       </side-placeholder>
@@ -111,6 +121,21 @@ import { computed, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 
 import { useTempoStore } from "@/stores/app";
+import { DENDROBAND_LAYER_ID } from "@/datasets/addDendrobands";
+import { TREE_DENSITY_ID } from "@/datasets/addTreeDensity";
+import { SERC_ELEVATION_ID } from "@/datasets/addSercElevation";
+import { SERC_SOIL_ID } from "@/datasets/addSercSoil";
+
+// Layers in the layer panel, bottom to top. Rivers move and toggle with lakes.
+const LAYER_ORDER = [SERC_ELEVATION_ID, SERC_SOIL_ID, "ne-lakes", TREE_DENSITY_ID, DENDROBAND_LAYER_ID];
+const LAYER_NAMES: Record<string, string> = {
+  [SERC_ELEVATION_ID]: "SERC elevation (LiDAR)",
+  [SERC_SOIL_ID]: "SERC soil moisture (2012)",
+  "ne-lakes": "Lakes & rivers",
+  [TREE_DENSITY_ID]: "Tree density",
+  [DENDROBAND_LAYER_ID]: "Tree growth (dendrobands)",
+};
+const LAYER_CONNECTIONS = { "ne-lakes": ["ne-lakes", "ne-rivers"] };
 
 const root = useTemplateRef<HTMLDivElement>("root");
 const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");
@@ -129,6 +154,7 @@ const {
   datasetControlsOpen,
   layerControlsOpen,
   globalWarning,
+  map,
 } = storeToRefs(store);
 
 const showAlert = ref(!!globalWarning.value);
@@ -367,6 +393,22 @@ body {
 #layers-panel {
   /* can set to 5px to give handle back space */
   margin-inline: 5px;
+
+  /* matches the heading style in SpeciesRangeControls */
+  .layer-order-panel {
+    padding: 12px 10px;
+
+    .panel-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .panel-subtitle {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin: 2px 0 8px;
+    }
+  }
 }
 
 #datasets-panel {

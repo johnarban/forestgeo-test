@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
+import type { Map } from "maplibre-gl";
 
 // Brutally-simplified store for the ForestGEO (SCBI dendroband) viewer.
 // Most of the old TEMPO air-quality state has been removed. All that remains
@@ -42,6 +43,11 @@ const createTempoStore = () => defineStore("tempods", () => {
   const rangeSpecies = ref<string[]>([]);
   const rangeLoading = ref<string[]>([]);
 
+  // The map, set once it's ready, so the layer panel can control its layers.
+  // `shownLayers` records layers the user has turned on (used by the layer items).
+  const map = shallowRef<Map | null>(null);
+  const shownLayers = ref<string[]>([]);
+
   return {
     debugMode,
     globalWarning,
@@ -63,6 +69,9 @@ const createTempoStore = () => defineStore("tempods", () => {
 
     rangeSpecies,
     rangeLoading,
+
+    map,
+    shownLayers,
   };
 });
 

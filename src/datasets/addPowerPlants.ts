@@ -4,6 +4,7 @@ import { Map, Popup } from "maplibre-gl";
 import { createHeatmapColorMap, previewColormapInConsole } from "@/colormaps/utils";
 import { PrimSource } from "@/assets/power_plants";
 import { useGeoJsonLayer } from "@/composables/useGeoJsonLayer";
+import { addHeatmap } from "./addHeatmap";
 
 
 
@@ -218,7 +219,7 @@ export function addPowerPlants(map: Ref<Map | null> | null, startVisible = true)
   function addheatmapLayer() {
     if (!isValidMap(map)) return;
 
-    heatmapLayer.addToMap(map.value);
+    heatmapLayer.init();
 
     addLayer(); // add the point layer on top of the heatmap
 
@@ -226,79 +227,38 @@ export function addPowerPlants(map: Ref<Map | null> | null, startVisible = true)
   // get screen pixel ratio
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const heatmapLayer = useGeoJsonLayer("power-plants-heatmap", null, {
-    sourceId: "power-plants-heatmap-source",
-    layerOptions: {
-      id: powerPlantsHeatmapLayerId,
-      type: 'heatmap',
-      // maxzoom: 5,
-      paint: {
-        "heatmap-radius": [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          0, // zoom = 0
-          4 / pixelRatio, // radius = 1 @ zoom = 0
-          9, // zoom = 9
-          40 / pixelRatio // radius = 20 @ zoom = 9
-        ],
-        "heatmap-intensity": 1,
-        "heatmap-weight": [
-          'interpolate',
-          ['linear'],
-          ['get', 'Install_MW'],
-          0, //
-          0, // density is 0 at 0 MW
-          1000,
-          1, // densitity = 1 @ 1 GW
-        ],
-        "heatmap-color": [
-          'interpolate',
-          ['linear'],
-          ['heatmap-density'],
-          // 0.0, 'rgb(0,0,0,0)',
-          // 0.05, 'rgb(37,52,148)',
-          // 0.1, 'rgb(37,52,148)',
-          // 0.2, 'rgb(44,127,184)',
-          // 0.4, 'rgb(65,182,196)',
-          // 0.6, 'rgb(127,205,187)',
-          // 0.8, 'rgb(199,233,180)',
-          // 1.0, 'rgb(255,255,204)',
-          // ...[
-          //   0, "rgba(0,0,0,0)",
-          //   0.1, "rgb(7,4,13)",
-          //   0.125, "rgb(91,21,124)",
-          //   0.25, "rgb(223,79,103)",
-          //   0.375, "rgb(254,156,84)",
-          //   0.5, "rgb(254,232,161)",
-          //   0.625,"rgb(252,250,189)",
-          //   0.75, "rgb(181,220,168)",
-          //   0.875, "rgb(118,196,173)",
-          //   1.0, "rgb(64,157,191)",
-          // ]
-          ...createHeatmapColorMap('viridis', [0.1, 0.2, 0.4, 0.6, 0.8, 1], 0.05) // aweful by default
-        ],
-        // only fade at the zoom limit
-        "heatmap-opacity": 0.8,
-        // "heatmap-opacity": [
-        //   'interpolate',
-        //   ['linear'],
-        //   ['zoom'],
-        //   4.9, // zoom = 4.9
-        //   1, // opacity = 1 @ zoom = 4.9
-        //   5, // zoom = 5
-        //   0 // opacity = 0 @ zoom = 5
-        // ],
-      }
-    }
-
+  // data arrives later via ensureDataLoaded -> setData
+  const heatmapLayer = addHeatmap(map ?? ref(null), powerPlantsHeatmapLayerId, null, {
+    paint: {
+      "heatmap-radius": [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        0, // zoom = 0
+        4 / pixelRatio, // radius = 1 @ zoom = 0
+        9, // zoom = 9
+        40 / pixelRatio // radius = 20 @ zoom = 9
+      ],
+      "heatmap-weight": [
+        'interpolate',
+        ['linear'],
+        ['get', 'Install_MW'],
+        0, //
+        0, // density is 0 at 0 MW
+        1000,
+        1, // densitity = 1 @ 1 GW
+      ],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      "heatmap-color": ['interpolate', ['linear'], ['heatmap-density'], ...createHeatmapColorMap('viridis', [0.1, 0.2, 0.4, 0.6, 0.8, 1], 0.05)] as any, // aweful by default
+      "heatmap-opacity": 0.8,
+    },
   });
 
 
 
   function removeLayer() {
     circleLayer.cleanup();
-    heatmapLayer.cleanup();
+    heatmapLayer.remove();
   }
 
   return {

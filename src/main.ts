@@ -22,6 +22,8 @@ import IconCheckbox from "./components/IconCheckbox.vue";
 import SaveState from "./components/SaveState.vue";
 import SidePlaceholder from "./components/SidePlaceholder.vue";
 import SpeciesRangeControls from "./components/SpeciesRangeControls.vue";
+import LayerOrderControl from "./components/LayerOrderControl.vue";
+import PopupInfoButton from "./components/PopupInfoButton.vue";
 
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -120,6 +122,8 @@ createApp(TempoLab, {})
   .component('save-state', SaveState)
   .component('side-placeholder', SidePlaceholder)
   .component('species-range-controls', SpeciesRangeControls)
+  .component('layer-order-control', LayerOrderControl)
+  .component('popup-info-button', PopupInfoButton)
 
   // Mount
   .mount("#app");

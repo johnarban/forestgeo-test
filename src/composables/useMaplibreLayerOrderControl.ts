@@ -653,7 +653,8 @@ export function useMaplibreLayerOrderControl(
   return {
     desiredOrder,
     currentOrder,
-    controller,
+    // getter: the controller is created later if the map isn't ready yet
+    get controller() { return controller; },
   };
   
   

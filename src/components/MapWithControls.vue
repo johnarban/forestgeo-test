@@ -154,6 +154,9 @@ import {
 } from "@/datasets/addDendrobands";
 import { addTreeRanges } from "@/datasets/addTreeRanges";
 import { addWater } from "@/datasets/addWater";
+import { addSercElevation } from "@/datasets/addSercElevation";
+import { addSercSoil } from "@/datasets/addSercSoil";
+import { addTreeDensity } from "@/datasets/addTreeDensity";
 import MaplibreMap from "@/components/MaplibreMap.vue";
 
 const mapID = `map-${v4().replace("-", "")}`;
@@ -216,6 +219,13 @@ watch(treeRanges.loading, (l) => { rangeLoading.value = l; });
 // Natural Earth water/rivers context layer, shown beneath the data.
 const water = addWater(map);
 
+// SERC plot rasters (Cloud Optimized GeoTIFFs in public/), beneath the points.
+const sercElevation = addSercElevation(map);
+const sercSoil = addSercSoil(map);
+
+// Tree-count heatmap on the dendroband source; shares the points' filter.
+const treeDensity = addTreeDensity(map);
+
 // v-select items: display the common name, keep the `sp` code as the value
 // (the value the map filter matches on). Sorted by common name.
 const speciesItems = computed(() =>
@@ -270,13 +280,18 @@ const colorModeItems = [
 
 // --- Map wiring: delegate data/layer/style to the dataset composable -----
 function applyFilter() {
-  dendrobands.applyFilter(selectedYear.value, selectedSpecies.value, availableSpecies.value);
+  const filter = dendrobands.applyFilter(selectedYear.value, selectedSpecies.value, availableSpecies.value);
+  treeDensity.setFilter(filter);
 }
 
 async function onMapReady(m: Map) {
   map.value = m;
+  store.map = m; // for the layer order panel
   addPlainBasemap(m); // beneath the data layers added below
   dendrobands.init();
+  treeDensity.init(); // needs the dendroband source from init() above
+  sercElevation.init();
+  sercSoil.init();
   water.init(); // async; inserts beneath the points via beforeId
   dendrobands.setColorMode(colorMode.value);
   applyFilter();

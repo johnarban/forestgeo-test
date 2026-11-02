@@ -1,5 +1,5 @@
 import { ref, type Ref } from "vue";
-import { Map, Popup } from "maplibre-gl";
+import { Map, Popup, type FilterSpecification } from "maplibre-gl";
 import { useGeoJsonLayer } from "@/composables/useGeoJsonLayer";
 
 // SCBI ForestGEO dendroband growth dataset (public/dendroband_growth.geojson).
@@ -96,6 +96,7 @@ export const growthGradient = `linear-gradient(to right, ${GROWTH_STOPS
   .join(", ")})`;
 
 export const DENDROBAND_LAYER_ID = "scbi-trees-layer";
+export const DENDROBAND_SOURCE_ID = "scbi-trees-source";
 
 // What loadData() extracts from the feature collection for the UI controls.
 export interface DendrobandData {
@@ -146,7 +147,7 @@ export function addDendrobands(map: Ref<Map | null>) {
   const loading = ref(false);
 
   const treesLayer = useGeoJsonLayer("scbi-trees", null, {
-    sourceId: "scbi-trees-source",
+    sourceId: DENDROBAND_SOURCE_ID,
     sourceSpec: {
       attribution: 'Dendroband data: <a href="https://forestgeo.si.edu" target="_blank" rel="noopener noreferrer">SCBI ForestGEO</a>',
     },
@@ -265,8 +266,9 @@ export function addDendrobands(map: Ref<Map | null>) {
 
   // Show only the selected year and species. Passing all species (or an empty
   // `availableSpecies`) applies no species restriction.
-  function applyFilter(year: number, selectedSpecies: string[], availableSpecies: string[]) {
-    if (!map.value?.getLayer(DENDROBAND_LAYER_ID)) { return; }
+  /** Show one year and the selected species. Returns the filter so paired layers can reuse it. */
+  function applyFilter(year: number, selectedSpecies: string[], availableSpecies: string[]): FilterSpecification | null {
+    if (!map.value?.getLayer(DENDROBAND_LAYER_ID)) { return null; }
     const allSelected = availableSpecies.length === 0
       || selectedSpecies.length === availableSpecies.length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,6 +281,7 @@ export function addDendrobands(map: Ref<Map | null>) {
     const filter = ["all", ["==", ["get", "year"], year], speciesClause];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     map.value.setFilter(DENDROBAND_LAYER_ID, filter as any);
+    return filter as FilterSpecification;
   }
 
   function setColorMode(mode: ColorMode) {
