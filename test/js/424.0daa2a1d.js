@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunk_cosmicds_tempo_lab"]=self["webpackChunk_cosmicds_tempo_lab"]||[]).push([[424],{424(e,s,c){c.d(s,{default:()=>d});var a=c(9969),t=c(797);class d extends t.A{decodeBlock(e){return(0,a.UD)(new Uint8Array(e)).buffer}}}}]);
+//# sourceMappingURL=424.0daa2a1d.js.map
