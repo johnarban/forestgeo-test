@@ -142,14 +142,14 @@ const LAYER_NAMES: Record<string, string> = {
   [SERC_ELEVATION_ID]: "SERC elevation (LiDAR)",
   [SERC_SOIL_ID]: "SERC soil moisture (2012)",
   "ne-lakes": "Lakes & rivers",
-  [censusDensityId("SCBI")]: "SCBI census tree density",
-  [censusTreesId("SCBI")]: "SCBI census trees",
-  [censusDensityId("SERC")]: "SERC census tree density",
-  [censusTreesId("SERC")]: "SERC census trees",
-  [treeDensityId("SCBI")]: "SCBI tree density",
-  [treeDensityId("SERC")]: "SERC tree density",
-  [dendrobandLayerId("SCBI")]: "SCBI trees (dendrobands)",
-  [dendrobandLayerId("SERC")]: "SERC trees (dendrobands)",
+  [censusDensityId("SCBI")]: "SCBI census (heatmap)",
+  [censusTreesId("SCBI")]: "SCBI census (points)",
+  [censusDensityId("SERC")]: "SERC census (heatmap)",
+  [censusTreesId("SERC")]: "SERC census (points)",
+  [treeDensityId("SCBI")]: "SCBI dendro (heatmap)",
+  [treeDensityId("SERC")]: "SERC dendro (heatmap)",
+  [dendrobandLayerId("SCBI")]: "SCBI dendro (points)",
+  [dendrobandLayerId("SERC")]: "SERC dendro (points)",
 };
 const LAYER_CONNECTIONS = { "ne-lakes": ["ne-lakes", "ne-rivers"] };
 // Collapsible extra controls under a layer row. The census live/dead filter
