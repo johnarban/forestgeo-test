@@ -10,6 +10,8 @@ import type { Map } from "maplibre-gl";
 export type ColorMode = "genus" | "growth";
 export type Basemap = "terrain" | "plain";
 export type Site = "SCBI" | "SERC";
+// Census tree filter: live stems, dead stems, or both (latest census status).
+export type CensusStatus = "live" | "dead" | "all";
 
 const createTempoStore = () => defineStore("tempods", () => {
   const debugMode = ref(false);
@@ -47,6 +49,9 @@ const createTempoStore = () => defineStore("tempods", () => {
   const rangeSpecies = ref<string[]>([]);
   const rangeLoading = ref<string[]>([]);
 
+  // Census tree filter per site (drives both the points and the density heatmap).
+  const censusStatus = ref<Record<Site, CensusStatus>>({ SCBI: "live", SERC: "live" }); // eslint-disable-line @typescript-eslint/naming-convention
+
   // The map, set once it's ready, so the layer panel can control its layers.
   // `shownLayers` records layers the user has turned on (used by the layer items).
   const map = shallowRef<Map | null>(null);
@@ -74,6 +79,8 @@ const createTempoStore = () => defineStore("tempods", () => {
 
     rangeSpecies,
     rangeLoading,
+
+    censusStatus,
 
     map,
     shownLayers,

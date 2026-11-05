@@ -16,7 +16,19 @@
           :layer-id="element"
           :display-name="layerNames[element] ?? element"
           :synced-items="connections[element] ?? []"
-        />
+        >
+          <template #extras="{ visible }">
+            <narrow-expansion-panel
+              v-if="panels[element]"
+              v-show="visible"
+              :item="element"
+              :label="panels[element].label ?? 'Options'"
+              :is-open="false"
+            >
+              <component :is="panels[element].component" v-bind="panels[element].props ?? {}" />
+            </narrow-expansion-panel>
+          </template>
+        </layer-control-item>
       </div>
     </template>
   </draggable>
@@ -29,6 +41,8 @@ import M from "maplibre-gl";
 
 import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrderControl";
 import LayerControlItem from "./MaplibreLayerControlItem.vue";
+import NarrowExpansionPanel from "./NarrowExpansionPanel.vue";
+import type { LayerPanel } from "@/types";
 
 // Drag-to-reorder list of map layers, each with a visibility checkbox and an
 // opacity slider. `order` is bottom to top; the list shows it top to bottom.
@@ -39,11 +53,14 @@ interface Props {
   layerNames?: Record<string, string>;
   // layers that move, show/hide and fade together with a listed layer
   connections?: Record<string, string[]>;
+  // extra controls (e.g. filters) shown in a collapsible block under a layer
+  panels?: Record<string, LayerPanel>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   layerNames: () => ({}),
   connections: () => ({}),
+  panels: () => ({}),
 });
 const mapRef = toRef(() => props.mapRef);
 

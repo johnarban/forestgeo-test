@@ -1,7 +1,7 @@
 // Types
 
 import M, { GeoJSONSource, } from 'maplibre-gl';
-import { type MaybeRef, type Ref, toValue } from 'vue';
+import { type Component, type MaybeRef, type Ref, toValue } from 'vue';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type Prettify<T> = { [K in keyof T]: T[K]; } & {};
@@ -220,3 +220,11 @@ export interface UseSelectionOptions<MapType, EventType, SelectionInfo> {
 export type UnifiedRegion = RectangleSelection | PointSelection;
 
 export type SelectionType = "rectangle" | "point" | null;
+
+// A collapsible block of extra controls under a row of the layer panel
+// (LayerOrderControl), e.g. a filter. `props` are passed to `component`.
+export interface LayerPanel {
+  label?: string;
+  component: Component;
+  props?: Record<string, unknown>;
+}

@@ -54,6 +54,7 @@
               :order="LAYER_ORDER"
               :layer-names="LAYER_NAMES"
               :connections="LAYER_CONNECTIONS"
+              :panels="LAYER_PANELS"
             />
           </div>
           <species-range-controls />
@@ -120,17 +121,20 @@
 import { computed, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 
-import { useTempoStore } from "@/stores/app";
+import { useTempoStore, type Site } from "@/stores/app";
+import CensusStatusFilter from "@/components/CensusStatusFilter.vue";
+import type { LayerPanel } from "@/types";
 import { dendrobandLayerId } from "@/datasets/addDendrobands";
 import { treeDensityId } from "@/datasets/addTreeDensity";
 import { SERC_ELEVATION_ID } from "@/datasets/addSercElevation";
 import { SERC_SOIL_ID } from "@/datasets/addSercSoil";
-import { SERC_TREES_ID, SERC_TREES_DENSITY_ID } from "@/datasets/addSercTrees";
+import { censusTreesId, censusDensityId } from "@/datasets/addCensusTrees";
 
 // Layers in the layer panel, bottom to top. Rivers move and toggle with lakes.
 const LAYER_ORDER = [
   SERC_ELEVATION_ID, SERC_SOIL_ID, "ne-lakes",
-  SERC_TREES_DENSITY_ID, SERC_TREES_ID,
+  censusDensityId("SCBI"), censusTreesId("SCBI"),
+  censusDensityId("SERC"), censusTreesId("SERC"),
   treeDensityId("SCBI"), treeDensityId("SERC"),
   dendrobandLayerId("SCBI"), dendrobandLayerId("SERC"),
 ];
@@ -138,14 +142,25 @@ const LAYER_NAMES: Record<string, string> = {
   [SERC_ELEVATION_ID]: "SERC elevation (LiDAR)",
   [SERC_SOIL_ID]: "SERC soil moisture (2012)",
   "ne-lakes": "Lakes & rivers",
-  [SERC_TREES_DENSITY_ID]: "SERC census tree density",
-  [SERC_TREES_ID]: "SERC census trees",
+  [censusDensityId("SCBI")]: "SCBI census tree density",
+  [censusTreesId("SCBI")]: "SCBI census trees",
+  [censusDensityId("SERC")]: "SERC census tree density",
+  [censusTreesId("SERC")]: "SERC census trees",
   [treeDensityId("SCBI")]: "SCBI tree density",
   [treeDensityId("SERC")]: "SERC tree density",
   [dendrobandLayerId("SCBI")]: "SCBI trees (dendrobands)",
   [dendrobandLayerId("SERC")]: "SERC trees (dendrobands)",
 };
 const LAYER_CONNECTIONS = { "ne-lakes": ["ne-lakes", "ne-rivers"] };
+// Collapsible extra controls under a layer row. The census live/dead filter
+// shows under both of a site's census layers (they share the filter).
+const censusFilter = (site: Site): LayerPanel => ({ label: "Filters", component: CensusStatusFilter, props: { site } });
+const LAYER_PANELS: Record<string, LayerPanel> = Object.fromEntries(
+  (["SCBI", "SERC"] as Site[]).flatMap((site) => [
+    [censusDensityId(site), censusFilter(site)],
+    [censusTreesId(site), censusFilter(site)],
+  ]),
+);
 
 const root = useTemplateRef<HTMLDivElement>("root");
 const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");

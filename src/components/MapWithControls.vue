@@ -156,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, shallowRef, useTemplateRef, watch } from "vue";
+import { computed, ref, shallowRef, toRef, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { Map } from "maplibre-gl";
 import { v4 } from "uuid";
@@ -176,7 +176,7 @@ import { addWater } from "@/datasets/addWater";
 import { addSercElevation } from "@/datasets/addSercElevation";
 import { addSercSoil } from "@/datasets/addSercSoil";
 import { addTreeDensity } from "@/datasets/addTreeDensity";
-import { addSercTrees } from "@/datasets/addSercTrees";
+import { addCensusTrees } from "@/datasets/addCensusTrees";
 import MaplibreMap from "@/components/MaplibreMap.vue";
 
 const mapID = `map-${v4().replace("-", "")}`;
@@ -247,8 +247,8 @@ const sercSoil = addSercSoil(map);
 // Tree-count heatmap per site on its dendroband source; shares the points' filter.
 const treeDensity = siteKeys.map((s) => addTreeDensity(map, s));
 
-// SERC census tree list: density heatmap (on) and points (off).
-const sercTrees = addSercTrees(map);
+// ForestGEO census tree lists per site: density heatmap (on) and points (off).
+const censusTrees = siteKeys.map((s) => addCensusTrees(map, s, toRef(() => store.censusStatus[s])));
 
 // v-select items: display the common name, keep the `sp` code as the value
 // (the value the map filter matches on). Sorted by common name.
@@ -322,7 +322,7 @@ async function onMapReady(m: Map) {
   sercElevation.init();
   sercSoil.init();
   water.init(); // async; inserts beneath the points via beforeId
-  sercTrees.init(); // async, same
+  censusTrees.forEach((c) => c.init()); // async, same
   dendrobands.forEach((d) => d.setColorMode(colorMode.value));
   applyFilter();
 
