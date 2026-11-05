@@ -13,10 +13,17 @@ export const treeDensityId = (site: Site) => `${site.toLowerCase()}-trees-densit
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const PLOT_HEATMAP_RADIUS: any = ["interpolate", ["exponential", 2], ["zoom"], 14, 6, 18, 60];
 
+// MapLibre heatmap-intensity for the dendroband heatmaps: lower it if they
+// saturate, raise it if sparse areas are too faint.
+const DENDRO_HEATMAP_INTENSITY = 0.5;
+
 export function addTreeDensity(map: Ref<M.Map | null>, site: Site) {
   return addHeatmap(map, treeDensityId(site), dendrobandSourceId(site), {
     beforeId: dendrobandLayerId(site),
     visible: false, // turned on from the layer panel
-    paint: { "heatmap-radius": PLOT_HEATMAP_RADIUS },
+    paint: {
+      "heatmap-radius": PLOT_HEATMAP_RADIUS,
+      "heatmap-intensity": DENDRO_HEATMAP_INTENSITY,
+    },
   });
 }

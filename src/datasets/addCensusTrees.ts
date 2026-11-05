@@ -20,12 +20,10 @@ interface CensusConfig {
   file: string;
   attribution: string;
   statusField: string; // status in the latest census; "LI" = live, anything else = dead
-  // Heatmap density at the top of the color scale, per filter (raise to spread the
-  // colors over a wider range, lower for more contrast in sparse areas).
-  // The density is about 1.4x the stems per 100 m² at the current
-  // PLOT_HEATMAP_RADIUS, the same at every zoom. These are ~the 99th percentile
-  // of each site's density, so only the densest 1% of the plot saturates.
-  densityMax: Record<CensusStatus, number>;
+  // MapLibre heatmap-intensity per filter: lower it if the heatmap saturates,
+  // raise it if sparse areas are too faint. Set so only the densest ~1% of the
+  // plot reaches the top of the color scale at the home zoom (16).
+  heatmapIntensity: Record<CensusStatus, number>;
   censusRows: (p: Props) => string; // popup <tr>s, one per census
   extraRows?: (p: Props) => string;
 }
@@ -40,7 +38,7 @@ const CENSUS: Record<Site, CensusConfig> = {
     file: "scbi_census.geojson",
     attribution: 'Tree census: <a href="https://forestgeo.si.edu" target="_blank" rel="noopener noreferrer">SCBI ForestGEO</a>',
     statusField: "status",
-    densityMax: { live: 90, dead: 170, all: 240 },
+    heatmapIntensity: { live: 0.02, dead: 0.012, all: 0.009 },
     censusRows: (p) => [2008, 2013, 2018, 2023]
       .filter((y) => p[`dbh_${y}`])
       .map((y) => row(y, `${(p[`dbh_${y}`] / 10).toFixed(1)} cm`))
@@ -57,7 +55,7 @@ const CENSUS: Record<Site, CensusConfig> = {
     file: "serc_trees.geojson",
     attribution: 'Tree census: <a href="https://forestgeo.si.edu" target="_blank" rel="noopener noreferrer">SERC ForestGEO</a>',
     statusField: "status_4",
-    densityMax: { live: 3.6, dead: 1.7, all: 4.2 },
+    heatmapIntensity: { live: 0.4, dead: 0.8, all: 0.35 },
     censusRows: (p) => [1, 2, 3, 4]
       .filter((i) => p[`ExactDate_${i}`])
       .map((i) => row(p[`ExactDate_${i}`], `${p[`dbh_${i}`] ?? "–"} cm, ${p[`status_${i}`] ?? "–"}`))
@@ -79,7 +77,7 @@ export function addCensusTrees(map: Ref<M.Map | null>, site: Site, status: Reado
   const sourceId = censusSourceId(site);
   const loading = ref(false);
   const filter = () => statusFilter(cfg.statusField, status.value);
-  const intensity = () => 1 / cfg.densityMax[status.value];
+  const intensity = () => cfg.heatmapIntensity[status.value];
 
   const heatmap = addHeatmap(map, densityId, sourceId, {
     beforeId: layerId,

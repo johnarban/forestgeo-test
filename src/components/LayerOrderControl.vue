@@ -18,6 +18,7 @@
           :synced-items="connections[element] ?? []"
         >
           <template #extras="{ visible }">
+            <heatmap-colorbar v-show="visible" :map="mapRef" :layer-id="element" class="layer-colorbar" />
             <narrow-expansion-panel
               v-if="panels[element]"
               v-show="visible"
@@ -42,6 +43,7 @@ import M from "maplibre-gl";
 import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrderControl";
 import LayerControlItem from "./MaplibreLayerControlItem.vue";
 import NarrowExpansionPanel from "./NarrowExpansionPanel.vue";
+import HeatmapColorbar from "./HeatmapColorbar.vue";
 import type { LayerPanel } from "@/types";
 
 // Drag-to-reorder list of map layers, each with a visibility checkbox and an
@@ -108,6 +110,11 @@ const displayOrder = computed({
   flex-direction: row;
   align-items: center;
   gap: 5px;
+}
+
+.layer-colorbar {
+  width: 100%;
+  padding: 0 8px 4px;
 }
 
 .mlc-layer-item {
