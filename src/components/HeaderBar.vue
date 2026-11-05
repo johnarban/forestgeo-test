@@ -10,7 +10,7 @@
     </a>
     </div>
 
-    <h1 id="title">ForestGEO: Explore Tree Growth at SCBI</h1>
+    <h1 id="title">ForestGEO: Explore Tree Growth</h1>
     <!-- <cds-dialog
       title="Time Series"
       v-model="samplesGraph"
